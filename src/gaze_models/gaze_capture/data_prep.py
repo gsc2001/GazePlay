@@ -30,7 +30,7 @@ def get_face_grid(grid_shape, face_bbox, img_shape):
     face_bbox[2] *= grid_shape[0] / img_shape[0]
     face_bbox[1] *= grid_shape[1] / img_shape[1]
     face_bbox[3] *= grid_shape[1] / img_shape[1]
-    x, y, x2, y2 = np.int(face_bbox)
+    x, y, x2, y2 = np.array(face_bbox, dtype=int)
     grid[y:y2, x:x2] = 1
     return grid
 
@@ -39,10 +39,8 @@ def load_metadata(filename, silent=False):
     try:
         # http://stackoverflow.com/questions/6273634/access-array-contents-from-a-mat-file-loaded-using-scipy-io-loadmat-python
         if not silent:
-            print('\tReading metadata from %s...' % filename)
-        metadata = sio.loadmat(filename, squeeze_me=True, struct_as_record=False)
+            metadata = sio.loadmat(filename, squeeze_me=True, struct_as_record=False)
     except:
-        print('\tFailed to read the meta file "%s"!' % filename)
         return None
     return metadata
 
@@ -75,6 +73,10 @@ def preprocess(face, eyeL, eyeR, face_eyes_bbox, img_shape):
     ])(eyeR)
 
     grid = get_face_grid((25, 25), face_eyes_bbox[0][0], img_shape)
-    grid = torch.FloatTensor(grid)
 
-    return transformed_face, transformed_eyeL, transformed_eyeR, grid
+    face = torch.reshape(transformed_face, (1, 3, 224, 224)).float()
+    eyeL = torch.reshape(transformed_eyeL, (1, 3, 224, 224)).float()
+    eyeR = torch.reshape(transformed_eyeR, (1, 3, 224, 224)).float()
+    grid = torch.FloatTensor(grid).reshape((1, 625))
+
+    return face, eyeL, eyeR, grid
