@@ -1,0 +1,1 @@
+from .vila_jones import VialaJonesDetector
