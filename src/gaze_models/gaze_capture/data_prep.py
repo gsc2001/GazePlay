@@ -45,32 +45,40 @@ def load_metadata(filename, silent=False):
     return metadata
 
 
+metadata_dir = os.path.dirname(os.path.abspath(__file__))
+face_mean = load_metadata(os.path.join(metadata_dir, 'mean_face_224.mat'))['image_mean']
+left_mean = load_metadata(os.path.join(metadata_dir, 'mean_left_224.mat'))['image_mean']
+right_mean = load_metadata(os.path.join(metadata_dir, 'mean_right_224.mat'))['image_mean']
+
+face_transformation = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    SubtractMean(meanImg=face_mean)
+])
+
+eyeL_transformation = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    SubtractMean(meanImg=left_mean)
+])
+
+eyeR_transformation = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    SubtractMean(meanImg=right_mean)
+])
+
+
 def preprocess(face, eyeL, eyeR, face_eyes_bbox, img_shape):
     """
     Preprocess face, eyeL and eyeR to run iTracker on it also return the face grid
     """
-    metadata_dir = os.path.dirname(os.path.abspath(__file__))
-    face_mean = load_metadata(os.path.join(metadata_dir, 'mean_face_224.mat'))['image_mean']
-    left_mean = load_metadata(os.path.join(metadata_dir, 'mean_left_224.mat'))['image_mean']
-    right_mean = load_metadata(os.path.join(metadata_dir, 'mean_right_224.mat'))['image_mean']
 
-    transformed_face = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        SubtractMean(meanImg=face_mean)
-    ])(face)
+    transformed_face = face_transformation(face)
 
-    transformed_eyeL = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        SubtractMean(meanImg=left_mean)
-    ])(eyeL)
+    transformed_eyeL = eyeL_transformation(eyeL)
 
-    transformed_eyeR = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        SubtractMean(meanImg=right_mean)
-    ])(eyeR)
+    transformed_eyeR = eyeR_transformation(eyeR)
 
     grid = get_face_grid((25, 25), face_eyes_bbox[0][0], img_shape)
 
