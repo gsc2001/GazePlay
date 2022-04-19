@@ -1,79 +1,78 @@
-import argparse
-import os
-import shutil
-import time, math
-from collections import OrderedDict
 import torch
 import torch.nn as nn
 import torch.nn.parallel
-import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-import torchvision.models as models
-import numpy as np
-import torch.utils.model_zoo as model_zoo
-from torch.autograd.variable import Variable
 
-'''
-Pytorch model for the iTracker.
-
-Author: Petr Kellnhofer ( pkel_lnho (at) gmai_l.com // remove underscores and spaces), 2018. 
-
-Website: http://gazecapture.csail.mit.edu/
-
-Cite:
-
-Eye Tracking for Everyone
-K.Krafka*, A. Khosla*, P. Kellnhofer, H. Kannan, S. Bhandarkar, W. Matusik and A. Torralba
-IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2016
-
-@inproceedings{cvpr2016_gazecapture,
-Author = {Kyle Krafka and Aditya Khosla and Petr Kellnhofer and Harini Kannan and Suchendra Bhandarkar and Wojciech Matusik and Antonio Torralba},
-Title = {Eye Tracking for Everyone},
-Year = {2016},
-Booktitle = {IEEE Conference on Computer Vision and Pattern Recognition (CVPR)}
-}
-
-'''
+from constants import *
 
 
-class ItrackerImageModel(nn.Module):
-    # Used for both eyes (with shared weights) and the face (with unqiue weights)
+class CNNModel(nn.Module):
     def __init__(self):
-        super(ItrackerImageModel, self).__init__()
+        super().__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(3, 96, kernel_size=11, stride=4, padding=0),
+            # 224 x 224 x 3
+            nn.Conv2d(
+                3,
+                CONV1_OUT,
+                kernel_size=CONV1_KERNEL,
+                stride=CONV1_STRIDE,
+                padding=CONV1_PADDING,
+            ),
+            # 54 x 54 x 96
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.MaxPool2d(kernel_size=MAX_POOL1_KERNEL, stride=MAX_POOL1_STRIDE),
             nn.CrossMapLRN2d(size=5, alpha=0.0001, beta=0.75, k=1.0),
-            nn.Conv2d(96, 256, kernel_size=5, stride=1, padding=2, groups=2),
+            # 26 x 26 x 96
+            nn.Conv2d(
+                CONV1_OUT,
+                CONV2_OUT,
+                kernel_size=CONV2_KERNEL,
+                stride=CONV2_STRIDE,
+                padding=CONV2_PADDING,
+                groups=2,
+            ),
+            # 26 x 26 x 256
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2),
+            nn.MaxPool2d(kernel_size=MAX_POOL2_KERNEL, stride=MAX_POOL2_STRIDE),
             nn.CrossMapLRN2d(size=5, alpha=0.0001, beta=0.75, k=1.0),
-            nn.Conv2d(256, 384, kernel_size=3, stride=1, padding=1),
+            # 12 x 12 x 256
+            nn.Conv2d(
+                CONV2_OUT,
+                CONV3_OUT,
+                kernel_size=CONV3_KERNEL,
+                stride=CONV3_STRIDE,
+                padding=CONV3_PADDING,
+            ),
+            # 12 x 12 x 384
             nn.ReLU(inplace=True),
-            nn.Conv2d(384, 64, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(
+                CONV3_OUT,
+                CONV4_OUT,
+                kernel_size=CONV4_KERNEL,
+                stride=CONV4_STRIDE,
+                padding=CONV4_PADDING,
+            ),
+            # 12 x 12 x 64
             nn.ReLU(inplace=True),
-
         )
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), -1)
+        x = x.reshape(x.size(0), -1)
         return x
 
 
-class FaceImageModel(nn.Module):
-
+class FaceModel(nn.Module):
     def __init__(self):
-        super(FaceImageModel, self).__init__()
-        self.conv = ItrackerImageModel()
+        super().__init__()
+        self.conv = CNNModel()
         self.fc = nn.Sequential(
-            nn.Linear(12 * 12 * 64, 128),
+            # 12 * 12 * 64
+            nn.Linear(FINAL_CNN_DIM, FC_F1),
             nn.ReLU(inplace=True),
-            nn.Linear(128, 64),
+            # 128
+            nn.Linear(FC_F1, FC_F2),
             nn.ReLU(inplace=True),
         )
 
@@ -84,54 +83,51 @@ class FaceImageModel(nn.Module):
 
 
 class FaceGridModel(nn.Module):
-    # Model for the face grid pathway
-    def __init__(self, gridSize=25):
-        super(FaceGridModel, self).__init__()
+    def __init__(self):
+        super(self).__init__()
         self.fc = nn.Sequential(
-            nn.Linear(gridSize * gridSize, 256),
+            # 25 * 25
+            nn.Linear(GRID_SIZE * GRID_SIZE, FC_FG1),
             nn.ReLU(inplace=True),
-            nn.Linear(256, 128),
+            # 256
+            nn.Linear(FC_FG1, FC_FG2),
             nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
+        x = x.reshape(x.size(0), -1)
         x = self.fc(x)
         return x
 
 
 class ITrackerModel(nn.Module):
-
     def __init__(self):
-        super(ITrackerModel, self).__init__()
-        self.eyeModel = ItrackerImageModel()
-        self.faceModel = FaceImageModel()
+        super().__init__()
+        self.CNNModel = CNNModel()
+        self.faceModel = FaceModel()
         self.gridModel = FaceGridModel()
-        # Joining both eyes
+
         self.eyesFC = nn.Sequential(
-            nn.Linear(2 * 12 * 12 * 64, 128),
+            nn.Linear(2 * FINAL_CNN_DIM, FC_E1),
             nn.ReLU(inplace=True),
         )
-        # Joining everything
+
         self.fc = nn.Sequential(
-            nn.Linear(128 + 64 + 128, 128),
+            nn.Linear(FC_E1 + FC_F2 + FC_FG2, FC1),
             nn.ReLU(inplace=True),
-            nn.Linear(128, 2),
+            nn.Linear(FC1, FC2),
         )
 
     def forward(self, faces, eyesLeft, eyesRight, faceGrids):
-        # Eye nets
-        xEyeL = self.eyeModel(eyesLeft)
-        xEyeR = self.eyeModel(eyesRight)
-        # Cat and FC
+        xEyeL = self.CNNModel(eyesLeft)
+        xEyeR = self.CNNModel(eyesRight)
+
         xEyes = torch.cat((xEyeL, xEyeR), 1)
         xEyes = self.eyesFC(xEyes)
 
-        # Face net
         xFace = self.faceModel(faces)
         xGrid = self.gridModel(faceGrids)
 
-        # Cat all
         x = torch.cat((xEyes, xFace, xGrid), 1)
         x = self.fc(x)
 
