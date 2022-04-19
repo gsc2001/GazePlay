@@ -10,7 +10,7 @@ from constants import *
 class CNNModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.features = nn.Sequential(
+        self.conv = nn.Sequential(
             # 224 x 224 x 3
             nn.Conv2d(
                 3,
@@ -58,7 +58,7 @@ class CNNModel(nn.Module):
         )
 
     def forward(self, x):
-        x = self.features(x)
+        x = self.conv(x)
         x = x.reshape(x.size(0), -1)
         return x
 
@@ -103,7 +103,7 @@ class FaceGridModel(nn.Module):
 class ITrackerModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.CNNModel = CNNModel()
+        self.eyeModel = CNNModel()
         self.faceModel = FaceModel()
         self.gridModel = FaceGridModel()
 
@@ -119,8 +119,8 @@ class ITrackerModel(nn.Module):
         )
 
     def forward(self, faces, eyesLeft, eyesRight, faceGrids):
-        xEyeL = self.CNNModel(eyesLeft)
-        xEyeR = self.CNNModel(eyesRight)
+        xEyeL = self.eyeModel(eyesLeft)
+        xEyeR = self.eyeModel(eyesRight)
 
         xEyes = torch.cat((xEyeL, xEyeR), 1)
         xEyes = self.eyesFC(xEyes)
