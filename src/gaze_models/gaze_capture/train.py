@@ -88,6 +88,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
 
 def validate(val_loader, model, criterion, epoch):
     losses = AverageMeter()
+    L2losses = AverageMeter()
 
     model.eval()
 
@@ -108,10 +109,12 @@ def validate(val_loader, model, criterion, epoch):
             output = model(face, eyeL, eyeR, grid)
 
         loss = criterion(output, gaze)
+        L2loss = torch.mean(torch.sqrt(torch.sum(torch.square(output - gaze), 1)))
         losses.update(loss.data.item(), face.size(0))
+        L2losses.update(L2loss.item(), face.size(0))
 
         print(
-            f"Epoch [{epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})"
+            f"Epoch [{epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
         )
 
     return losses.avg

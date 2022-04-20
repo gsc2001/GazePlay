@@ -26,8 +26,8 @@ args = parser.parse_args()
 BATCH_SIZE = torch.cuda.device_count() * 100
 
 
-def test(test_loader, model, criterion, epoch):
-    losses = AverageMeter()
+def test(test_loader, model):
+    L2losses = AverageMeter()
 
     model.eval()
 
@@ -47,10 +47,10 @@ def test(test_loader, model, criterion, epoch):
         with torch.no_grad():
             output = model(face, eyeL, eyeR, grid)
 
-        loss = criterion(output, gaze)
-        losses.update(loss.data.item(), face.size(0))
+        L2loss = torch.mean(torch.sqrt(torch.sum(torch.square(output - gaze), 1)))
+        L2losses.update(L2loss.item(), face.size(0))
 
-    return losses.avg
+    return L2losses.avg
 
 
 def main():
@@ -78,10 +78,8 @@ def main():
         pin_memory=True,
     )
 
-    criterion = nn.MSELoss().cuda()
-
-    best_prec1 = test(test_loader, model, criterion)
-    print(f"Best Loss {best_prec1:.4f}")
+    best_prec1 = test(test_loader, model)
+    print(f"Best L2 Loss {best_prec1:.4f}")
 
 
 if __name__ == "__main__":
