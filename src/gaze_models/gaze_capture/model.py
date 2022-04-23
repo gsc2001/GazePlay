@@ -10,7 +10,7 @@ from constants import *
 class CNNModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv = nn.Sequential(
+        self.feature = nn.Sequential(
             # 224 x 224 x 3
             nn.Conv2d(
                 3,
@@ -58,7 +58,7 @@ class CNNModel(nn.Module):
         )
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.feature(x)
         x = x.reshape(x.size(0), -1)
         return x
 

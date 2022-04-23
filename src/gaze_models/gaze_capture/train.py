@@ -1,18 +1,10 @@
-import math, shutil, os, time, argparse
-from pyexpat import model
-import numpy as np
-import scipy.io as sio
-from scipy.misc import face
+import shutil, argparse
 
 import torch
 import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
-import torchvision.transforms as transforms
-import torchvision.datasets as datasets
-import torchvision.models as models
 
 from model import ITrackerModel
 from constants import *
@@ -164,17 +156,13 @@ def main():
     global best_prec1
 
     model = ITrackerModel()
-    model = torch.nn.DataParallel(model)
     model.cuda()
     cudnn.benchmark = True
 
     completed_epoch = 0
     if args.checkpoint != "":
         checkpoint = load_checkpoint()
-        try:
-            model.module.load_state_dict(checkpoint["state_dict"])
-        except:
-            model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint["state_dict"])
         completed_epoch = checkpoint["epoch"]
         best_prec1 = checkpoint["best_prec1"]
 

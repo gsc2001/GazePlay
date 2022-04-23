@@ -1,8 +1,6 @@
 import argparse
 
 import torch
-import torch.nn as nn
-import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
@@ -57,16 +55,12 @@ def main():
     global best_prec1
 
     model = ITrackerModel()
-    model = torch.nn.DataParallel(model)
     model.cuda()
     cudnn.benchmark = True
 
     if args.checkpoint != "":
         checkpoint = load_checkpoint()
-        try:
-            model.module.load_state_dict(checkpoint["state_dict"])
-        except:
-            model.load_state_dict(checkpoint["state_dict"])
+        model.load_state_dict(checkpoint["state_dict"])
 
     dataTest = ITrackerData(dataPath=args.data_path, split="test", imSize=IMAGE_SIZE)
 
