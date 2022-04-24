@@ -4,13 +4,13 @@ import torch.nn.parallel
 import torch.optim
 import torch.utils.data
 
-from constants import *
+from .constants import *
 
 
 class CNNModel(nn.Module):
     def __init__(self):
         super().__init__()
-        self.feature = nn.Sequential(
+        self.features = nn.Sequential(
             # 224 x 224 x 3
             nn.Conv2d(
                 3,
@@ -58,7 +58,7 @@ class CNNModel(nn.Module):
         )
 
     def forward(self, x):
-        x = self.feature(x)
+        x = self.features(x)
         x = x.reshape(x.size(0), -1)
         return x
 
@@ -84,7 +84,7 @@ class FaceModel(nn.Module):
 
 class FaceGridModel(nn.Module):
     def __init__(self):
-        super(self).__init__()
+        super().__init__()
         self.fc = nn.Sequential(
             # 25 * 25
             nn.Linear(GRID_SIZE * GRID_SIZE, FC_FG1),

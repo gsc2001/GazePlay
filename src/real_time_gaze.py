@@ -1,6 +1,6 @@
 import cv2
 from face_eye_detectors.vila_jones import VialaJonesDetector
-from process import extract_face_eyes
+from process import extract_face_eyes, get_gaze_image
 from gaze_models.gaze_capture.data_prep import preprocess
 from gaze_models.gaze_capture.runner import GazeCaptureRunner
 from PIL import Image
@@ -14,8 +14,11 @@ def main():
 
     cap = cv2.VideoCapture(0)
     cv2.namedWindow('Output', cv2.WINDOW_GUI_NORMAL)
+    cv2.namedWindow('Gaze', cv2.WINDOW_GUI_NORMAL)
     while True:
         ret, frame = cap.read()
+        # frame = frame[:, ::-1, :]
+        # frame = cv2.flip(frame, 1)
         img = frame.copy()
         if not ret:
             print('ERROR! no video --- break')
@@ -49,6 +52,8 @@ def main():
             face, eyeL, eyeR, grid = preprocess(face, eyeL, eyeR, faces_eyes, frame.shape)
             output = model_runner.run(face, eyeL, eyeR, grid)
             print(output)
+            gaze_image = get_gaze_image(output.detach().cpu().numpy())
+            cv2.imshow('Gaze', gaze_image)
 
         key = cv2.waitKey(1)
         if key == ord('q'):

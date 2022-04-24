@@ -39,7 +39,8 @@ def load_metadata(filename, silent=False):
     try:
         # http://stackoverflow.com/questions/6273634/access-array-contents-from-a-mat-file-loaded-using-scipy-io-loadmat-python
         if not silent:
-            metadata = sio.loadmat(filename, squeeze_me=True, struct_as_record=False)
+            print('\tReading metadata from %s...' % filename)
+        metadata = sio.loadmat(filename, squeeze_me=True, struct_as_record=False)
     except:
         return None
     return metadata
@@ -69,16 +70,16 @@ eyeR_transformation = transforms.Compose([
 ])
 
 
+def face_eye_preprocess(face, eyeL, eyeR):
+    return face_transformation(face), eyeL_transformation(eyeL), eyeR_transformation(eyeR)
+
+
 def preprocess(face, eyeL, eyeR, face_eyes_bbox, img_shape):
     """
     Preprocess face, eyeL and eyeR to run iTracker on it also return the face grid
     """
 
-    transformed_face = face_transformation(face)
-
-    transformed_eyeL = eyeL_transformation(eyeL)
-
-    transformed_eyeR = eyeR_transformation(eyeR)
+    transformed_face, transformed_eyeL, transformed_eyeR = face_eye_preprocess(face, eyeL, eyeR)
 
     grid = get_face_grid((25, 25), face_eyes_bbox[0][0], img_shape)
 
