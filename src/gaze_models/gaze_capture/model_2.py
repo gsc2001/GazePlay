@@ -71,9 +71,6 @@ class FaceModel(nn.Module):
             # 12 * 12 * 64
             nn.Linear(FINAL_CNN_DIM, FC_F1),
             nn.ReLU(inplace=True),
-            # 128
-            nn.Linear(FC_F1, FC_F2),
-            nn.ReLU(inplace=True),
         )
 
     def forward(self, x):
@@ -88,9 +85,6 @@ class FaceGridModel(nn.Module):
         self.fc = nn.Sequential(
             # 25 * 25
             nn.Linear(GRID_SIZE * GRID_SIZE, FC_FG1),
-            nn.ReLU(inplace=True),
-            # 256
-            nn.Linear(FC_FG1, FC_FG2),
             nn.ReLU(inplace=True),
         )
 
@@ -112,8 +106,13 @@ class ITrackerModel(nn.Module):
             nn.ReLU(inplace=True),
         )
 
+        self.faceFC = nn.Sequential(
+            nn.Linear(FC_F1 + FC_FG1, FC_F2_2),
+            nn.ReLU(inplace=True),
+        )
+
         self.fc = nn.Sequential(
-            nn.Linear(FC_E1 + FC_F2 + FC_FG2, FC1),
+            nn.Linear(FC_E1 + FC_F2_2, FC1),
             nn.ReLU(inplace=True),
             nn.Linear(FC1, FC2),
         )
@@ -128,7 +127,10 @@ class ITrackerModel(nn.Module):
         face = self.faceModel(faces)
         grid = self.gridModel(faceGrids)
 
-        x = torch.cat((eyes, face, grid), 1)
+        face_grid = torch.cat((face, grid), 1)
+        face_grid = self.faceFC(face_grid)
+
+        x = torch.cat((eyes, face_grid), 1)
         x = self.fc(x)
 
         return x
