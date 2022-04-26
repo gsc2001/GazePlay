@@ -24,9 +24,14 @@ parser.add_argument(
     default="",
     help="checkpoint file",
 )
+parser.add_argument(
+    '--batch_size',
+    default=256,
+    type=int
+)
 args = parser.parse_args()
 
-BATCH_SIZE = torch.cuda.device_count() * 100
+BATCH_SIZE = torch.cuda.device_count() * args.batch_size
 
 best_prec1 = 1e20
 lr = BASE_LR
