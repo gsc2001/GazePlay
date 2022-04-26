@@ -102,8 +102,8 @@ def validate(val_loader, model, criterion, epoch):
     L2losses = AverageMeter()
 
     model.eval()
-
-    for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(val_loader)):
+    total_samples = len(val_loader)
+    for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(val_loader), total=total_samples):
         face = face.cuda()
         eyeL = eyeL.cuda()
         eyeR = eyeR.cuda()
@@ -129,7 +129,7 @@ def validate(val_loader, model, criterion, epoch):
         #     f"Epoch [{epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
         # )
     print(
-        f"Epoch [{epoch}][]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
+        f"Epoch [{epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
     )
 
     return losses.avg
@@ -195,7 +195,7 @@ def main():
         dataTrain,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        # num_workers=WORKERS,
+        num_workers=10,
         pin_memory=True,
     )
 
@@ -203,7 +203,7 @@ def main():
         dataVal,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        # num_workers=WORKERS,
+        num_workers=3,
         pin_memory=True,
     )
 
