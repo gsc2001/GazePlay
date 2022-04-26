@@ -13,6 +13,7 @@ from lib.model import ITrackerModel
 from lib.constants import *
 
 from tqdm import tqdm
+import os
 
 parser = argparse.ArgumentParser(description="iTracker-pytorch-Trainer.")
 parser.add_argument(
@@ -52,7 +53,9 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
         model.train()
         total_samples = len(train_loader)
 
-        for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(train_loader), total=len(train_loader)):
+        for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(
+            enumerate(train_loader), total=len(train_loader)
+        ):
             face = face.cuda()
             eyeL = eyeL.cuda()
             eyeR = eyeR.cuda()
@@ -75,12 +78,10 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
             if i % PRINT_FREQ == 0:
                 wandb.log({"step": _epoch * total_samples + i, "train/loss_step": losses.avg})
 
-        print(
-            f"Epoch [{_epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})"
-        )
-        wandb.log({'train/loss': losses.avg, 'epoch': _epoch})
+        print(f"Epoch [{_epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})")
+        wandb.log({"train/loss": losses.avg, "epoch": _epoch})
         prec1 = validate(val_loader, model, criterion, _epoch)
-        wandb.log({'val/loss': losses.avg, 'epoch': _epoch})
+        wandb.log({"val/loss": losses.avg, "epoch": _epoch})
         best_prec1 = min(prec1, best_prec1)
         save_checkpoint(
             {
@@ -136,13 +137,16 @@ def load_checkpoint():
 
 
 def save_checkpoint(state, is_best):
-    filename = args.checkpoint.split("/")[-1]
+    if args.checkpoint == "":
+        filename = "checkpoint.pth.tar"
+    else:
+        filename = args.checkpoint.split("/")[-1]
     dir = "/".join(args.checkpoint.split("/")[:-1])
 
-    bestFilename = f"{dir}/best_{filename}"
-    torch.save(state, args.checkpoint)
+    bestFilename = os.path.join(dir, f"best_{filename}")
+    torch.save(state, filename)
     if is_best:
-        shutil.copyfile(args.checkpoint, bestFilename)
+        shutil.copyfile(filename, bestFilename)
 
 
 def lr_decay(optimizer, epoch):
@@ -174,7 +178,7 @@ def main():
     global best_prec1
 
     wandb.login()
-    wandb.init(project='CV')
+    wandb.init(project="CV")
 
     model = ITrackerModel()
     model.cuda()
@@ -187,7 +191,9 @@ def main():
         completed_epoch = checkpoint["epoch"]
         best_prec1 = checkpoint["best_prec1"]
 
-    dataTrain = ITrackerData(data_path=args.data_path, split="train", im_size=IMAGE_SIZE)
+    dataTrain = ITrackerData(
+        data_path=args.data_path, split="train", im_size=IMAGE_SIZE
+    )
     dataVal = ITrackerData(data_path=args.data_path, split="val", im_size=IMAGE_SIZE)
 
     train_loader = torch.utils.data.DataLoader(
