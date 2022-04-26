@@ -6,8 +6,13 @@ import torch.backends.cudnn as cudnn
 import torch.optim
 import torch.utils.data
 
-from model import ITrackerModel
-from constants import *
+import wandb
+from ITrackerDataModule import ITrackerData
+
+from lib.model import ITrackerModel
+from lib.constants import *
+
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser(description="iTracker-pytorch-Trainer.")
 parser.add_argument(
@@ -41,7 +46,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
 
         model.train()
 
-        for i, (_, face, eyeL, eyeR, grid, gaze) in enumerate(train_loader):
+        for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(train_loader), total=len(train_loader)):
             face = face.cuda()
             eyeL = eyeL.cuda()
             eyeR = eyeR.cuda()
@@ -61,12 +66,14 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            # if i % PRINT_FREQ == 0:
 
-            print(
-                f"Epoch [{_epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})"
-            )
-
+        print(
+            f"Epoch [{_epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})"
+        )
+        wandb.log({'train/loss': losses.avg, 'epoch': _epoch})
         prec1 = validate(val_loader, model, criterion, _epoch)
+        wandb.log({'val/loss': losses.avg, 'epoch': _epoch})
         best_prec1 = min(prec1, best_prec1)
         save_checkpoint(
             {
@@ -84,7 +91,7 @@ def validate(val_loader, model, criterion, epoch):
 
     model.eval()
 
-    for i, (_, face, eyeL, eyeR, grid, gaze) in enumerate(val_loader):
+    for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(val_loader)):
         face = face.cuda()
         eyeL = eyeL.cuda()
         eyeR = eyeR.cuda()
@@ -105,9 +112,13 @@ def validate(val_loader, model, criterion, epoch):
         losses.update(loss.data.item(), face.size(0))
         L2losses.update(L2loss.item(), face.size(0))
 
-        print(
-            f"Epoch [{epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
-        )
+        # if i % PRINT_FREQ == 0:
+        # print(
+        #     f"Epoch [{epoch}][{i}/{len(val_loader)}]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
+        # )
+    print(
+        f"Epoch [{epoch}][]\tLoss {losses.val:.4f} ({losses.avg:.4f})\tL2 Loss {L2losses.val:.4f} ({L2losses.avg:.4f})"
+    )
 
     return losses.avg
 
@@ -155,6 +166,9 @@ class AverageMeter(object):
 def main():
     global best_prec1
 
+    wandb.login()
+    wandb.init(project='CV')
+
     model = ITrackerModel()
     model.cuda()
     cudnn.benchmark = True
@@ -166,14 +180,14 @@ def main():
         completed_epoch = checkpoint["epoch"]
         best_prec1 = checkpoint["best_prec1"]
 
-    dataTrain = ITrackerData(dataPath=args.data_path, split="train", imSize=IMAGE_SIZE)
-    dataVal = ITrackerData(dataPath=args.data_path, split="val", imSize=IMAGE_SIZE)
+    dataTrain = ITrackerData(data_path=args.data_path, split="train", im_size=IMAGE_SIZE)
+    dataVal = ITrackerData(data_path=args.data_path, split="val", im_size=IMAGE_SIZE)
 
     train_loader = torch.utils.data.DataLoader(
         dataTrain,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        num_workers=WORKERS,
+        # num_workers=WORKERS,
         pin_memory=True,
     )
 
@@ -181,7 +195,7 @@ def main():
         dataVal,
         batch_size=BATCH_SIZE,
         shuffle=False,
-        num_workers=WORKERS,
+        # num_workers=WORKERS,
         pin_memory=True,
     )
 

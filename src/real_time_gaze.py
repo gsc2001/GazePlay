@@ -1,8 +1,8 @@
 import cv2
 from face_eye_detectors.vila_jones import VialaJonesDetector
 from process import extract_face_eyes, get_gaze_image
-from gaze_models.gaze_capture.data_prep import preprocess
-from gaze_models.gaze_capture.runner import GazeCaptureRunner
+from gaze_models.gaze_capture.lib.data_prep import preprocess
+from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
 from PIL import Image
 
 import numpy as np

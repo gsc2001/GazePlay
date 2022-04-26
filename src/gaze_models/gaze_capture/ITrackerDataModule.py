@@ -5,7 +5,7 @@ import torch
 from torch.utils import data
 from PIL import Image
 from torchvision.transforms import transforms
-from .data_prep import load_metadata, face_eye_preprocess
+from lib.data_prep import load_metadata, face_eye_preprocess
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -51,8 +51,8 @@ class ITrackerData(data.Dataset):
         grid_len = self.grid_size[0] * self.grid_size[1]
         grid = np.zeros([grid_len, ], np.float32)
 
-        indsY = np.array([i // self.gridSize[0] for i in range(grid_len)])
-        indsX = np.array([i % self.gridSize[0] for i in range(grid_len)])
+        indsY = np.array([i // self.grid_size[0] for i in range(grid_len)])
+        indsX = np.array([i % self.grid_size[0] for i in range(grid_len)])
         condX = np.logical_and(indsX >= params[0], indsX < params[0] + params[2])
         condY = np.logical_and(indsY >= params[1], indsY < params[1] + params[3])
         cond = np.logical_and(condX, condY)
@@ -63,11 +63,11 @@ class ITrackerData(data.Dataset):
     def __getitem__(self, index):
         index = self.indices[index]
 
-        imFacePath = os.path.join(self.dataPath, '%05d/appleFace/%05d.jpg' % (
+        imFacePath = os.path.join(self.data_path, '%05d/appleFace/%05d.jpg' % (
             self.metadata['labelRecNum'][index], self.metadata['frameIndex'][index]))
-        imEyeLPath = os.path.join(self.dataPath, '%05d/appleLeftEye/%05d.jpg' % (
+        imEyeLPath = os.path.join(self.data_path, '%05d/appleLeftEye/%05d.jpg' % (
             self.metadata['labelRecNum'][index], self.metadata['frameIndex'][index]))
-        imEyeRPath = os.path.join(self.dataPath, '%05d/appleRightEye/%05d.jpg' % (
+        imEyeRPath = os.path.join(self.data_path, '%05d/appleRightEye/%05d.jpg' % (
             self.metadata['labelRecNum'][index], self.metadata['frameIndex'][index]))
 
         imFace = load_image(imFacePath)
@@ -84,3 +84,6 @@ class ITrackerData(data.Dataset):
         face_grid = torch.FloatTensor(face_grid)
         gaze = torch.FloatTensor(gaze)
         return row, img_face, img_eyeL, img_eyeR, face_grid, gaze
+
+    def __len__(self):
+        return len(self.indices)
