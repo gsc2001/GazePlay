@@ -85,7 +85,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
         print(f"Epoch [{_epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})")
         wandb.log({"train/loss": losses.avg, "epoch": _epoch})
         prec1 = validate(val_loader, model, criterion, _epoch)
-        wandb.log({"val/loss": losses.avg, "epoch": _epoch})
+        wandb.log({"val/loss": prec1, "epoch": _epoch})
         best_prec1 = min(prec1, best_prec1)
         save_checkpoint(
             {
