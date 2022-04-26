@@ -30,6 +30,10 @@ parser.add_argument(
     default=256,
     type=int
 )
+parser.add_argument(
+    '--checkpoint_dir',
+    required=True
+)
 args = parser.parse_args()
 
 BATCH_SIZE = torch.cuda.device_count() * args.batch_size
@@ -54,7 +58,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
         total_samples = len(train_loader)
 
         for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(
-            enumerate(train_loader), total=len(train_loader)
+                enumerate(train_loader), total=len(train_loader)
         ):
             face = face.cuda()
             eyeL = eyeL.cuda()
@@ -89,7 +93,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
                 "state_dict": model.state_dict(),
                 "best_prec1": best_prec1,
             },
-            prec1 < best_prec1,
+            _epoch
         )
 
 
@@ -136,17 +140,8 @@ def load_checkpoint():
     return checkpoint
 
 
-def save_checkpoint(state, is_best):
-    if args.checkpoint == "":
-        filename = "checkpoint.pth.tar"
-    else:
-        filename = args.checkpoint.split("/")[-1]
-    dir = "/".join(args.checkpoint.split("/")[:-1])
-
-    bestFilename = os.path.join(dir, f"best_{filename}")
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, bestFilename)
+def save_checkpoint(state, epoch):
+    torch.save(state, os.path.join(args.checkpoint_dir, f'epoch_{epoch}.pth.tar'))
 
 
 def lr_decay(optimizer, epoch):
