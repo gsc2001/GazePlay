@@ -45,6 +45,7 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
         lr_decay(optimizer, _epoch)
 
         model.train()
+        total_samples = len(train_loader)
 
         for i, (_, face, eyeL, eyeR, grid, gaze) in tqdm(enumerate(train_loader), total=len(train_loader)):
             face = face.cuda()
@@ -66,7 +67,8 @@ def train(train_loader, val_loader, model, criterion, optimizer, completed_epoch
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-            # if i % PRINT_FREQ == 0:
+            if i % PRINT_FREQ == 0:
+                wandb.log({"step": _epoch * total_samples + i, "train/loss_step": losses.avg})
 
         print(
             f"Epoch [{_epoch}]\tLoss {losses.val:.4f} ({losses.avg:.4f})"
