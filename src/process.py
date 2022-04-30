@@ -19,17 +19,35 @@ def extract_face_eyes(img, face_eyes_bbox):
     eyeL_bbox = face_eyes_bbox[1][0]
     eyeR_bbox = face_eyes_bbox[1][1]
 
-    if eyeL_bbox[0] > eyeR_bbox[0]:
+    if eyeL_bbox[0] < eyeR_bbox[0]:
         # swap them
         eyeL_bbox, eyeR_bbox = eyeR_bbox, eyeL_bbox
 
     return [crop(img, face_bbox), crop(img, eyeL_bbox), crop(img, eyeR_bbox)]
 
 
+def create_grid(point, grid_size, img_shape):
+    x_breaks = np.linspace(0, img_shape[1], grid_size[1], dtype=int)
+    y_breaks = np.linspace(0, img_shape[0], grid_size[0], dtype=int)
+
+    i_x = np.digitize(point[0], x_breaks)
+    i_y = np.digitize(point[1], y_breaks)
+
+    gaze_img = np.zeros(img_shape)
+
+    gaze_img[y_breaks[i_y - 1] : y_breaks[i_y], x_breaks[i_x - 1] : x_breaks[i_x]] = [
+        255,
+        255,
+        255,
+    ]
+
+    return gaze_img
+
+
 def get_gaze_image(model_output):
-    img = np.zeros((1080, 1920, 3))
-    cv2.circle(img, (model_output[0], model_output[1]), 10, (255, 255, 255), -1)
-    return img
+    model_output[0] = 1920 - model_output[0]
+    grid = create_grid(model_output, (6, 8), (1080, 1920, 3))
+    return grid
 
 
 def get_gaze_image_old(model_output, img_size=400):
