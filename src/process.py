@@ -26,10 +26,30 @@ def extract_face_eyes(img, face_eyes_bbox):
     return [crop(img, face_bbox), crop(img, eyeL_bbox), crop(img, eyeR_bbox)]
 
 
-def get_gaze_image(model_output, img_size=400):
+def get_gaze_image(model_output):
+    img = np.zeros((1080, 1920, 3))
+    cv2.circle(img, (model_output[0], model_output[1]), 10, (255, 255, 255), -1)
+    return img
+
+
+def get_gaze_image_old(model_output, img_size=400):
     img = np.zeros((img_size, img_size, 3))
-    model_output[1]  *= -1
+    model_output[1] *= -1
     pixel_point = (model_output * 10 + img_size // 2).astype(int).squeeze()
     print(pixel_point)
     cv2.circle(img, (pixel_point[0], pixel_point[1]), 10, (255, 255, 255), -1)
     return img
+
+
+def check_face_eyes(faces_eyes):
+    to_run = True
+    if len(faces_eyes) != 1:
+        to_run = False
+
+    # face, eye extraction
+    if to_run:
+        eyes_bboxs = faces_eyes[0][1]
+        if len(eyes_bboxs) != 2:
+            to_run = False
+
+    return to_run
