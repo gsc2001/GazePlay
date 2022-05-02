@@ -96,7 +96,6 @@ def get_calibration_matrix(
                 cv2.imwrite(f"images/image_{current_point}_{cnt}.png", frame)
                 output = model_runner.run(img, faces_eyes)
                 points_temp.append(output)
-                output[0, 1] *= -1
                 cnt += 1
                 if cnt >= mean_pts_n:
                     cnt = 0

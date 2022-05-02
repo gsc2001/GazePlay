@@ -46,4 +46,5 @@ class GazeCaptureRunner:
             eyeL = eyeL.cuda()
             eyeR = eyeR.cuda()
             grid = grid.cuda()
-        return self.model(face, eyeL, eyeR, grid).detach().cpu().numpy()
+        output = self.model(face, eyeL, eyeR, grid).detach().cpu().numpy().reshape(2)
+        return output

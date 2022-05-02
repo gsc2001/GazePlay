@@ -48,7 +48,6 @@ def create_grid(point, grid_size, img_shape):
 
 
 def get_gaze_image(model_output):
-    model_output[0] = 1920 - model_output[0]
     grid = create_grid(model_output, (6, 8), (1080, 1920, 3))
     return grid
 

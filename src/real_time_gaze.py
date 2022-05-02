@@ -45,7 +45,6 @@ def main():
         if to_run:
             output = model_runner.run(img, faces_eyes)
             output = np.vstack((output.reshape(2, 1), np.array([[1]])))
-            output[2] *= -1
             # print(output)
             screen_output = p_mat @ output
             screen_output /= screen_output[2]
