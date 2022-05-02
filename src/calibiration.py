@@ -1,12 +1,11 @@
 import cv2
 import numpy as np
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
-from face_eye_detectors.vila_jones import VialaJonesDetector
 from process import check_face_eyes
 
 
 def get_calibration_matrix(
-    model_runner: GazeCaptureRunner, face_eye_detector: VialaJonesDetector
+    model_runner: GazeCaptureRunner, face_eye_detector
 ):
     # return np.array(
     #     [

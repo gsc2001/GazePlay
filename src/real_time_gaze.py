@@ -1,5 +1,6 @@
 import cv2
-from face_eye_detectors.vila_jones import VialaJonesDetector
+# from face_eye_detectors.vila_jones import VialaJonesDetector
+from face_eye_detectors.dlib_detector.detector import Shape68Detector
 from process import extract_face_eyes, get_gaze_image, check_face_eyes
 from gaze_models.gaze_capture.lib.data_prep import preprocess
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
@@ -10,7 +11,7 @@ import numpy as np
 
 
 def main():
-    face_eye_detector = VialaJonesDetector()
+    face_eye_detector = Shape68Detector()
     model_runner = GazeCaptureRunner()
     p_mat = get_calibration_matrix(model_runner, face_eye_detector)
     print(p_mat)
@@ -36,6 +37,7 @@ def main():
             for eye in eyes:
                 cv2.rectangle(frame, eye[:2], eye[2:], (0, 255, 0), 2)
 
+        cv2.imshow('Output', frame)
         to_run = check_face_eyes(faces_eyes)
 
         if to_run:
@@ -48,10 +50,10 @@ def main():
             screen_output = screen_output.astype(int).reshape(3)
             # print(screen_output)
             if (
-                screen_output[1] >= 1080
-                or screen_output[1] < 0
-                or screen_output[0] >= 1920
-                or screen_output[0] < 0
+                    screen_output[1] >= 1080
+                    or screen_output[1] < 0
+                    or screen_output[0] >= 1920
+                    or screen_output[0] < 0
             ):
                 # print("OUT OF BOUNDS!")
                 continue
