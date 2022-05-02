@@ -101,7 +101,7 @@ class FaceGridModel(nn.Module):
 
 
 class ITrackerModel(nn.Module):
-    def __init__(self):
+    def __init__(self, features_only=False):
         super().__init__()
         self.eyeModel = CNNModel()
         self.faceModel = FaceModel()
@@ -111,12 +111,21 @@ class ITrackerModel(nn.Module):
             nn.Linear(2 * FINAL_CNN_DIM, FC_E1),
             nn.ReLU(inplace=True),
         )
+        if not features_only:
+            self.fc = nn.Sequential(
+                nn.Linear(FC_E1 + FC_F2 + FC_FG2, FC1),
+                nn.ReLU(inplace=True),
+                nn.Linear(FC1, FC2),
+            )
+        else:
+            self.fc = nn.Sequential(
+                nn.Linear(FC_E1 + FC_F2 + FC_FG2, FC1),
+                nn.ReLU(inplace=True)
+            )
 
-        self.fc = nn.Sequential(
-            nn.Linear(FC_E1 + FC_F2 + FC_FG2, FC1),
-            nn.ReLU(inplace=True),
-            nn.Linear(FC1, FC2),
-        )
+        # self.fc.0.1
+
+        self.features_only = features_only
 
     def forward(self, faces, eyesLeft, eyesRight, faceGrids):
         xEyeL = self.eyeModel(eyesLeft)

@@ -5,7 +5,7 @@ from process import check_face_eyes
 
 
 def get_calibration_matrix(
-    model_runner: GazeCaptureRunner, face_eye_detector
+        model_runner: GazeCaptureRunner, face_eye_detector
 ):
     # return np.array(
     #     [
@@ -19,6 +19,7 @@ def get_calibration_matrix(
     #
     cv2.setWindowProperty("Hi", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     ret, frame = cap.read()
 
     # screen_points = np.array([
@@ -41,8 +42,8 @@ def get_calibration_matrix(
             [100, 100],
             [960, 100],
             [1820, 100],
-            [530, 540],
-            [1390, 540],
+            [500, 540],
+            [1420, 540],
             [100, 980],
             [960, 980],
             [1820, 980],
@@ -92,7 +93,7 @@ def get_calibration_matrix(
             to_run = check_face_eyes(faces_eyes)
 
             if to_run:
-                cv2.imwrite(f"image_{current_point}_{cnt}.png", frame)
+                cv2.imwrite(f"images/image_{current_point}_{cnt}.png", frame)
                 output = model_runner.run(img, faces_eyes)
                 points_temp.append(output)
                 output[0, 1] *= -1
@@ -117,6 +118,7 @@ def get_calibration_matrix(
     screen_points = screen_points.astype(np.float32)
     print(points_detected)
     print(screen_points)
-    # cv2.destroyAllWindows()
-    p_mat = cv2.findHomography(points_detected, screen_points, method=cv2.RANSAC)[0]
+    cv2.destroyAllWindows()
+    p_mat, points = cv2.findHomography(points_detected, screen_points, method=cv2.RANSAC)
+    print(points)
     return p_mat

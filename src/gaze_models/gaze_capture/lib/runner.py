@@ -13,13 +13,17 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 
 
 class GazeCaptureRunner:
-    def __init__(self):
-        self.model = ITrackerModel()
+    def __init__(self, feature_only=False):
+        self.model = ITrackerModel(feature_only)
         # weights_path = os.path.join(file_dir, '..', '..', '', 'checkpoint_cpu.pth.tar')
         weights_path = 'checkpoint_cpu.pth.tar'
 
         print('Loading weights')
         checkpoint = torch.load(weights_path)
+        state_dict = checkpoint['state_dict']
+        if feature_only:
+            state_dict.pop('fc.2.weight')
+            state_dict.pop('fc.2.bias')
         self.model.load_state_dict(checkpoint['state_dict'])
         # print(next(self.model.parameters()).is_cuda)
         # self.model = self.model.cpu()
@@ -33,9 +37,9 @@ class GazeCaptureRunner:
 
     def run(self, img, faces_eyes):
         face, eyeL, eyeR = extract_face_eyes(img, faces_eyes[0])
-        face = Image.fromarray(face[..., ::-1].astype(np.uint8), 'RGB')
-        eyeL = Image.fromarray(eyeL[..., ::-1].astype(np.uint8), 'RGB')
-        eyeR = Image.fromarray(eyeR[..., ::-1].astype(np.uint8), 'RGB')
+        face = Image.fromarray(face[..., ::-1], 'RGB')
+        eyeL = Image.fromarray(eyeL[..., ::-1], 'RGB')
+        eyeR = Image.fromarray(eyeR[..., ::-1], 'RGB')
         face, eyeL, eyeR, grid = preprocess(face, eyeL, eyeR, faces_eyes, img.shape)
         if torch.cuda.is_available():
             face = face.cuda()

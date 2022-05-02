@@ -19,9 +19,9 @@ def extract_face_eyes(img, face_eyes_bbox):
     eyeL_bbox = face_eyes_bbox[1][0]
     eyeR_bbox = face_eyes_bbox[1][1]
 
-    if eyeL_bbox[0] < eyeR_bbox[0]:
-        # swap them
-        eyeL_bbox, eyeR_bbox = eyeR_bbox, eyeL_bbox
+    # if eyeL_bbox[0] > eyeR_bbox[0]:
+    #     # swap them
+    #     eyeL_bbox, eyeR_bbox = eyeR_bbox, eyeL_bbox
 
     return [crop(img, face_bbox), crop(img, eyeL_bbox), crop(img, eyeR_bbox)]
 
@@ -35,11 +35,14 @@ def create_grid(point, grid_size, img_shape):
 
     gaze_img = np.zeros(img_shape)
 
-    gaze_img[y_breaks[i_y - 1] : y_breaks[i_y], x_breaks[i_x - 1] : x_breaks[i_x]] = [
-        255,
-        255,
-        255,
-    ]
+    try:
+        gaze_img[y_breaks[i_y - 1]: y_breaks[i_y], x_breaks[i_x - 1]: x_breaks[i_x]] = [
+            255,
+            255,
+            255,
+        ]
+    except IndexError:
+        print(point)
 
     return gaze_img
 

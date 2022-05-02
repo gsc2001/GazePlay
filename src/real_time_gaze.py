@@ -11,12 +11,13 @@ import numpy as np
 
 
 def main():
-    face_eye_detector = Shape68Detector()
+    face_eye_detector = Shape68Detector(eye_size=(90, 50))
     model_runner = GazeCaptureRunner()
     p_mat = get_calibration_matrix(model_runner, face_eye_detector)
     print(p_mat)
 
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cv2.namedWindow("Output", cv2.WINDOW_GUI_NORMAL)
     cv2.namedWindow("Gaze", cv2.WINDOW_GUI_NORMAL)
     cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
@@ -37,8 +38,9 @@ def main():
             for eye in eyes:
                 cv2.rectangle(frame, eye[:2], eye[2:], (0, 255, 0), 2)
 
-        cv2.imshow('Output', frame)
         to_run = check_face_eyes(faces_eyes)
+
+        cv2.imshow("Output", frame)
 
         if to_run:
             output = model_runner.run(img, faces_eyes)
@@ -47,20 +49,19 @@ def main():
             # print(output)
             screen_output = p_mat @ output
             screen_output /= screen_output[2]
-            screen_output = screen_output.astype(int).reshape(3)
+            screen_output = screen_output[:2].astype(int).reshape(2)
             # print(screen_output)
-            if (
-                    screen_output[1] >= 1080
-                    or screen_output[1] < 0
-                    or screen_output[0] >= 1920
-                    or screen_output[0] < 0
-            ):
-                # print("OUT OF BOUNDS!")
-                continue
+            # if (
+            #         screen_output[1] >= 1080
+            #         or screen_output[1] < 0
+            #         or screen_output[0] >= 1920
+            #         or screen_output[0] < 0
+            # ):
+            #     # print("OUT OF BOUNDS!")
+            #     continue
+            screen_output = np.clip(screen_output, [20, 20], [1900, 1060])
             gaze_image = get_gaze_image(screen_output)
             cv2.imshow("Gaze", gaze_image)
-
-        cv2.imshow("Output", frame)
 
         key = cv2.waitKey(1)
         if key == ord("q"):
