@@ -15,6 +15,7 @@ file_dir = os.path.dirname(os.path.abspath(__file__))
 class GazeCaptureRunner:
     def __init__(self, feature_only=False):
         self.model = ITrackerModel(feature_only)
+        self.feature_only = feature_only
         # weights_path = os.path.join(file_dir, '..', '..', '', 'checkpoint_cpu.pth.tar')
         weights_path = 'checkpoint_cpu.pth.tar'
 
@@ -46,5 +47,10 @@ class GazeCaptureRunner:
             eyeL = eyeL.cuda()
             eyeR = eyeR.cuda()
             grid = grid.cuda()
-        output = self.model(face, eyeL, eyeR, grid).detach().cpu().numpy().reshape(2)
+        
+        output = self.model(face, eyeL, eyeR, grid).detach().cpu().numpy()            
+        if self.feature_only:
+            output = output.reshape(128)
+        else:
+            output = output.reshape(2)
         return output

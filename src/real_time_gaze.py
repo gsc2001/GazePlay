@@ -12,9 +12,9 @@ import numpy as np
 
 def main():
     face_eye_detector = Shape68Detector(eye_size=(90, 50))
-    model_runner = GazeCaptureRunner()
-    p_mat = get_calibration_matrix(model_runner, face_eye_detector)
-    print(p_mat)
+    model_runner = GazeCaptureRunner(feature_only=True)
+    sc_Input, sc_x, sc_y, regressor_x, regressor_y = get_calibration_matrix(model_runner, face_eye_detector)
+    # print(p_mat)
 
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
@@ -44,11 +44,18 @@ def main():
 
         if to_run:
             output = model_runner.run(img, faces_eyes)
-            output = np.vstack((output.reshape(2, 1), np.array([[1]])))
+            output = output.reshape(1, -1)
+            output = sc_Input.transform(output)
+            # output = np.vstack((output.reshape(2, 1), np.array([[1]])))
             # print(output)
-            screen_output = p_mat @ output
-            screen_output /= screen_output[2]
-            screen_output = screen_output[:2].astype(int).reshape(2)
+            x_coord = regressor_x.predict(output)
+            x_coord = sc_x.inverse_transform(x_coord.reshape(1, -1))
+            y_coord = regressor_y.predict(output)
+            y_coord = sc_y.inverse_transform(y_coord.reshape(1, -1))
+            # screen_output = p_mat @ output
+            # screen_output /= screen_output[2]
+            screen_output = np.array([x_coord[0][0], y_coord[0][0]], dtype=int)
+            # screen_output = screen_output[:2].astype(int).reshape(2)
             # print(screen_output)
             # if (
             #         screen_output[1] >= 1080
