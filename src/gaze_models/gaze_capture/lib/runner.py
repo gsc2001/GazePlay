@@ -37,20 +37,24 @@ class GazeCaptureRunner:
             self.model = self.model.cuda()
 
     def run(self, img, faces_eyes):
-        face, eyeL, eyeR = extract_face_eyes(img, faces_eyes[0])
-        face = Image.fromarray(face[..., ::-1], 'RGB')
-        eyeL = Image.fromarray(eyeL[..., ::-1], 'RGB')
-        eyeR = Image.fromarray(eyeR[..., ::-1], 'RGB')
-        face, eyeL, eyeR, grid = preprocess(face, eyeL, eyeR, faces_eyes, img.shape)
-        if torch.cuda.is_available():
-            face = face.cuda()
-            eyeL = eyeL.cuda()
-            eyeR = eyeR.cuda()
-            grid = grid.cuda()
-        
-        output = self.model(face, eyeL, eyeR, grid).detach().cpu().numpy()            
-        if self.feature_only:
-            output = output.reshape(128)
-        else:
-            output = output.reshape(2)
+
+        try:
+            face, eyeL, eyeR = extract_face_eyes(img, faces_eyes[0])
+            face = Image.fromarray(face[..., ::-1], 'RGB')
+            eyeL = Image.fromarray(eyeL[..., ::-1], 'RGB')
+            eyeR = Image.fromarray(eyeR[..., ::-1], 'RGB')
+            face, eyeL, eyeR, grid = preprocess(face, eyeL, eyeR, faces_eyes, img.shape)
+            if torch.cuda.is_available():
+                face = face.cuda()
+                eyeL = eyeL.cuda()
+                eyeR = eyeR.cuda()
+                grid = grid.cuda()
+
+            output = self.model(face, eyeL, eyeR, grid).detach().cpu().numpy()
+            if self.feature_only:
+                output = output.reshape(128)
+            else:
+                output = output.reshape(2)
+        except ValueError:
+            return None
         return output

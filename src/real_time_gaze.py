@@ -1,7 +1,7 @@
 import cv2
 # from face_eye_detectors.vila_jones import VialaJonesDetector
 from face_eye_detectors.dlib_detector.detector import Shape68Detector
-from process import extract_face_eyes, get_gaze_image, check_face_eyes
+from process import extract_face_eyes, get_gaze_image, check_face_eyes, SCREEN_RES
 from gaze_models.gaze_capture.lib.data_prep import preprocess
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
 from calibiration import get_calibration_matrix
@@ -22,6 +22,7 @@ def main():
     cv2.namedWindow("Gaze", cv2.WINDOW_GUI_NORMAL)
     cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+    old_output = None
     while True:
         ret, frame = cap.read()
         # frame = frame[:, ::-1, :]
@@ -44,6 +45,8 @@ def main():
 
         if to_run:
             output = model_runner.run(img, faces_eyes)
+            if output is None:
+                output = old_output
             output = output.reshape(1, -1)
             # output = sc_Input.transform(output)
             # output = np.vstack((output.reshape(2, 1), np.array([[1]])))
@@ -51,12 +54,12 @@ def main():
             x_coord = regressor_x.predict(output)
             x_coord = sc_x.inverse_transform(x_coord.reshape(1, -1))
             y_coord = regressor_y.predict(output)
-            
+
             y_coord = sc_y.inverse_transform(y_coord.reshape(1, -1))
             # screen_output = p_mat @ output
             # screen_output /= screen_output[2]
             screen_output = np.array([x_coord[0][0], y_coord[0][0]], dtype=int)
-            
+
             # screen_output = screen_output[:2].astype(int).reshape(2)
             # print(screen_output)
             # if (
@@ -67,12 +70,12 @@ def main():
             # ):
             #     # print("OUT OF BOUNDS!")
             #     continue
-            screen_output = np.clip(screen_output, [20, 20], [1900, 1060])
-            gaze_image = get_gaze_image(screen_output)
+            screen_output = np.clip(screen_output, [20, 20], SCREEN_RES - 20)
+            gaze_image, screen_output = get_gaze_image(screen_output, old_output)
             cv2.putText(
                 gaze_image,
                 f"Predited: {screen_output[0]}, {screen_output[1]}",
-                (960, 540),
+                SCREEN_RES // 2,
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
                 (255, 0, 0),
@@ -80,6 +83,7 @@ def main():
                 cv2.LINE_AA,
             )
             cv2.imshow("Gaze", gaze_image)
+            old_output = screen_output
 
         key = cv2.waitKey(1)
         if key == ord("q"):

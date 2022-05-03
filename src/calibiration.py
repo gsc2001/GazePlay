@@ -4,7 +4,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVR
 
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
-from process import check_face_eyes
+from process import check_face_eyes, SCREEN_RES
 
 
 def get_calibration_matrix(
@@ -24,22 +24,23 @@ def get_calibration_matrix(
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     ret, frame = cap.read()
+    x, y = SCREEN_RES
 
     screen_points = np.array(
         [
             [50, 50],
-            [960, 50],
-            [1870, 50],
-            [505, 290],
-            [1415, 290],
-            [50, 540],
-            [960, 540],
-            [1870, 540],
-            [505, 760],
-            [1415, 760],
-            [50, 980],
-            [960, 980],
-            [1870, 980],
+            [x // 2, 50],
+            [x - 50, 50],
+            [x // 4 + 25, y // 4 + 25],
+            [3 * x // 4 - 25, y // 4 + 25],
+            [50, y // 2],
+            [x // 2, y // 2],
+            [x - 50, y // 2],
+            [x // 4 + 25, 3 * y // 4 - 25],
+            [3 * x // 4 - 25, 3 * y // 4 - 25],
+            [50, y - 100],
+            [x // 2, y - 100],
+            [x - 50, y - 100],
         ],
         dtype=int,
     )
@@ -51,7 +52,7 @@ def get_calibration_matrix(
     output_values_y = []
     current_point = 0
     mean_pts_n = 5
-    
+
     while True:
 
         ret, frame = cap.read()
@@ -124,8 +125,8 @@ def get_calibration_matrix(
     # Input = sc_Input.fit_transform(input_features)
     x = sc_x.fit_transform(output_values_x)
     y = sc_y.fit_transform(output_values_y)
-    regressor_x = SVR(kernel = 'linear')
-    regressor_y = SVR(kernel = 'linear')
+    regressor_x = SVR(kernel='linear')
+    regressor_y = SVR(kernel='linear')
     regressor_x.fit(input_features, x)
     regressor_y.fit(input_features, y)
 
