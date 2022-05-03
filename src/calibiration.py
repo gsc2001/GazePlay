@@ -116,17 +116,18 @@ def get_calibration_matrix(
     input_features = np.array(input_features, dtype=np.float32)
     output_values_x = np.array(output_values_x, dtype=int).reshape(-1, 1)
     output_values_y = np.array(output_values_y, dtype=int).reshape(-1, 1)
+    print(output_values_x, output_values_y)
 
-    sc_Input = StandardScaler()
+    # sc_Input = StandardScaler()
     sc_x = StandardScaler()
     sc_y = StandardScaler()
-    Input = sc_Input.fit_transform(input_features)
+    # Input = sc_Input.fit_transform(input_features)
     x = sc_x.fit_transform(output_values_x)
     y = sc_y.fit_transform(output_values_y)
-    regressor_x = SVR(kernel = 'rbf')
-    regressor_y = SVR(kernel = 'rbf')
-    regressor_x.fit(Input, x)
-    regressor_y.fit(Input, y)
+    regressor_x = SVR(kernel = 'linear')
+    regressor_y = SVR(kernel = 'linear')
+    regressor_x.fit(input_features, x)
+    regressor_y.fit(input_features, y)
 
     # points_detected = np.array(points_detected, dtype=np.float32)
     # screen_points = screen_points.astype(np.float32)
@@ -135,4 +136,5 @@ def get_calibration_matrix(
     cv2.destroyAllWindows()
     # p_mat, points = cv2.findHomography(points_detected, screen_points, method=cv2.RANSAC)
     # print(points)
-    return sc_Input, sc_x, sc_y, regressor_x, regressor_y
+    # return sc_Input, sc_x, sc_y, regressor_x, regressor_y
+    return sc_x, sc_y, regressor_x, regressor_y
