@@ -46,7 +46,7 @@ def create_grid(point, grid_size, img_shape):
         ]
         centerx = (x_breaks[i_x - 1] + x_breaks[i_x]) // 2
         centery = (y_breaks[i_y-1] + y_breaks[i_y]) // 2
-        center = (centerx, centery)
+        center =  np.array([centerx, centery]).astype('float')
     except IndexError:
         print(point)
         center = point

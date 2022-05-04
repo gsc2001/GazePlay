@@ -37,8 +37,8 @@ def main():
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cv2.namedWindow("Output", cv2.WINDOW_GUI_NORMAL)
-    cv2.namedWindow("Gaze", cv2.WINDOW_GUI_NORMAL)
-    cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+    # cv2.namedWindow("Gaze", cv2.WINDOW_GUI_NORMAL)
+    # cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
     input("Press Enter after starting unity:")
 
@@ -95,26 +95,28 @@ def main():
             #     continue
             screen_output = np.clip(screen_output, [20, 20], SCREEN_RES - 20)
             screen_output = screen_output.astype('float')
-            # screen_output[0] /= SCREEN_RES[0]            
-            # screen_output[1] /= SCREEN_RES[1]       
-                 
-            # socket.send(bytes(f"message {screen_output[0]} {screen_output[1]}", "utf-8"))
-
+            
             gaze_image, screen_output, center = get_gaze_image(screen_output.astype(int), old_output, False)
-            cv2.putText(
-                gaze_image,
-                f"Predited: {screen_output[0]/SCREEN_RES[0]}, {screen_output[1]/SCREEN_RES[1]}",
-                SCREEN_RES // 2,
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,  
-                (255, 0, 0),
-                2,
-                cv2.LINE_AA,
-            )
-            cv2.imshow("Gaze", gaze_image)
-            old_output = screen_output.copy()
 
-        key = cv2.waitKey(1)
+            center[0] /= SCREEN_RES[0]            
+            center[1] /= SCREEN_RES[1]  
+                 
+            socket.send(bytes(f"message {center[0]} {center[1]}", "utf-8"))
+
+            # cv2.putText(
+            #     gaze_image,
+            #     f"Predited: {screen_output[0]/SCREEN_RES[0]}, {screen_output[1]/SCREEN_RES[1]}",
+            #     SCREEN_RES // 2,
+            #     cv2.FONT_HERSHEY_SIMPLEX,
+            #     1,  
+            #     (255, 0, 0),
+            #     2,
+            #     cv2.LINE_AA,
+            # )
+            # cv2.imshow("Gaze", gaze_image)
+            # old_output = screen_output.copy()
+
+        key = cv2.waitKey(5)
         if key == ord("q"):
             break
 
