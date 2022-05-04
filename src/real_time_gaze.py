@@ -68,6 +68,7 @@ def main():
             if output is None:
                 output = old_output
             if output is None:
+                print('oopsie')
                 continue
             output = output.reshape(1, -1)
             # output = sc_Input.transform(output)
@@ -99,7 +100,7 @@ def main():
                  
             # socket.send(bytes(f"message {screen_output[0]} {screen_output[1]}", "utf-8"))
 
-            gaze_image, screen_output = get_gaze_image(screen_output, old_output)
+            gaze_image, screen_output, center = get_gaze_image(screen_output.astype(int), old_output, False)
             cv2.putText(
                 gaze_image,
                 f"Predited: {screen_output[0]/SCREEN_RES[0]}, {screen_output[1]/SCREEN_RES[1]}",
@@ -111,7 +112,7 @@ def main():
                 cv2.LINE_AA,
             )
             cv2.imshow("Gaze", gaze_image)
-            old_output = screen_output
+            old_output = screen_output.copy()
 
         key = cv2.waitKey(1)
         if key == ord("q"):

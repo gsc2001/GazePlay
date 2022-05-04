@@ -44,10 +44,14 @@ def create_grid(point, grid_size, img_shape):
             255,
             255,
         ]
+        centerx = (x_breaks[i_x - 1] + x_breaks[i_x]) // 2
+        centery = (y_breaks[i_y-1] + y_breaks[i_y]) // 2
+        center = (centerx, centery)
     except IndexError:
         print(point)
+        center = point
 
-    return gaze_img
+    return gaze_img, center
 
 
 def get_gaze_image(model_output, old_output, momentum_damping=True):
@@ -55,8 +59,8 @@ def get_gaze_image(model_output, old_output, momentum_damping=True):
     if old_output is not None and momentum_damping:
         if np.linalg.norm(model_output - old_output) < min_movement:
             model_output = old_output
-    grid = create_grid(model_output, GRID_SHAPE, SCREEN_RES[::-1])
-    return grid, model_output
+    grid, center = create_grid(model_output, GRID_SHAPE, SCREEN_RES[::-1])
+    return grid, model_output, center
 
 
 # def get_gaze_image_old(model_output, img_size=400):
