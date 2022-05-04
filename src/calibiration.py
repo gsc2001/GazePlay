@@ -1,3 +1,4 @@
+from copyreg import pickle
 import cv2
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -5,6 +6,7 @@ from sklearn.svm import SVR
 
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
 from process import check_face_eyes, SCREEN_RES
+import pickle
 
 
 def get_calibration_matrix(
@@ -129,6 +131,11 @@ def get_calibration_matrix(
     regressor_y = SVR(kernel='linear')
     regressor_x.fit(input_features, x)
     regressor_y.fit(input_features, y)
+
+    pickle.dump(sc_x, open("scx.pkl", 'wb'))
+    pickle.dump(sc_y, open("scy.pkl", 'wb'))
+    pickle.dump(regressor_x, open("rgx.pkl", 'wb'))
+    pickle.dump(regressor_y, open("rgy.pkl", 'wb'))
 
     # points_detected = np.array(points_detected, dtype=np.float32)
     # screen_points = screen_points.astype(np.float32)

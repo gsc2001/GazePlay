@@ -1,3 +1,5 @@
+from copyreg import pickle
+from tkinter import E
 import cv2
 # from face_eye_detectors.vila_jones import VialaJonesDetector
 from face_eye_detectors.dlib_detector.detector import Shape68Detector
@@ -6,21 +8,39 @@ from gaze_models.gaze_capture.lib.data_prep import preprocess
 from gaze_models.gaze_capture.lib.runner import GazeCaptureRunner
 from calibiration import get_calibration_matrix
 from PIL import Image
+import sys
+import pickle
 
 import numpy as np
-
+import zmq
 
 def main():
+    context = zmq.Context()
+    #  Socket to talk to server
+    print("Creating a server…")
+    socket = context.socket(zmq.PUB)
+    socket.bind('tcp://*:5555')
+
     face_eye_detector = Shape68Detector(eye_size=(90, 50))
     model_runner = GazeCaptureRunner(feature_only=True)
-    sc_x, sc_y, regressor_x, regressor_y = get_calibration_matrix(model_runner, face_eye_detector)
+    if len(sys.argv) >= 2:
+        sc_x = pickle.load(open('scx.pkl', 'rb'))
+        sc_y = pickle.load(open('scy.pkl', 'rb'))
+        regressor_x = pickle.load(open('rgx.pkl', 'rb'))
+        regressor_y = pickle.load(open('rgy.pkl', 'rb'))
+
+    else:
+        sc_x, sc_y, regressor_x, regressor_y = get_calibration_matrix(model_runner, face_eye_detector)
     # print(p_mat)
 
+    
     cap = cv2.VideoCapture(0)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cv2.namedWindow("Output", cv2.WINDOW_GUI_NORMAL)
     cv2.namedWindow("Gaze", cv2.WINDOW_GUI_NORMAL)
     cv2.setWindowProperty("Gaze", cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+    input("Press Enter after starting unity:")
 
     old_output = None
     while True:
@@ -47,6 +67,8 @@ def main():
             output = model_runner.run(img, faces_eyes)
             if output is None:
                 output = old_output
+            if output is None:
+                continue
             output = output.reshape(1, -1)
             # output = sc_Input.transform(output)
             # output = np.vstack((output.reshape(2, 1), np.array([[1]])))
@@ -71,13 +93,19 @@ def main():
             #     # print("OUT OF BOUNDS!")
             #     continue
             screen_output = np.clip(screen_output, [20, 20], SCREEN_RES - 20)
+            screen_output = screen_output.astype('float')
+            # screen_output[0] /= SCREEN_RES[0]            
+            # screen_output[1] /= SCREEN_RES[1]       
+                 
+            # socket.send(bytes(f"message {screen_output[0]} {screen_output[1]}", "utf-8"))
+
             gaze_image, screen_output = get_gaze_image(screen_output, old_output)
             cv2.putText(
                 gaze_image,
-                f"Predited: {screen_output[0]}, {screen_output[1]}",
+                f"Predited: {screen_output[0]/SCREEN_RES[0]}, {screen_output[1]/SCREEN_RES[1]}",
                 SCREEN_RES // 2,
                 cv2.FONT_HERSHEY_SIMPLEX,
-                1,
+                1,  
                 (255, 0, 0),
                 2,
                 cv2.LINE_AA,
@@ -89,6 +117,9 @@ def main():
         if key == ord("q"):
             break
 
+    socket.close()
+    context.term()
+    
     cap.release()
     cv2.destroyAllWindows()
 
