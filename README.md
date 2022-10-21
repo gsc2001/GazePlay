@@ -26,3 +26,5 @@ Foveated rendering code in unity is available [here](https://github.com/exclowd/
 ## Project presentation
 A detailed presentation of the project including experiments, approaches tried and final results is present [here](./GazePlay.pdf)
 
+## Demo
+Video demo of the system available [here](https://www.youtube.com/watch?v=7MKH-BwySrI)
